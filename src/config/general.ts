@@ -2,11 +2,11 @@ export const generalConfig: GeneralConfigType = {
 
     __templateVersion: '1.1.0',
 
-	name: 'tscord',
+	name: 'dimbot',
 	description: '',
 	defaultLocale: 'en',
 	simpleCommandsPrefix: '!',
-	ownerId: '260908777446965248',
+	ownerId: '788078995459145748',
 	timezone: 'Europe/Paris',
 
 	links: {
@@ -18,7 +18,7 @@ export const generalConfig: GeneralConfigType = {
 	automaticUploadImagesToImgur: false,
 
 	devs: [
-		'260908777446965248',
+		'788078995459145748',
 	],
 
 	eval: {
