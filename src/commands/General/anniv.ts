@@ -48,7 +48,7 @@ constructor(
 				.setColor('#0099ff')
 				.setDescription(birthdays.map(b => `<@${b.id}> : ${dayjs(b.birthday).format('DD/MM/YYYY')}`).join('\n'))			
 				.setThumbnail('https://cdn.discordapp.com/avatars/617748486590300163/4d8b43300968e87f950bfc7161dab6b6.png')
-				.setFooter({text : `${busername}`})
+				.setFooter({text : `🎉 Anniversaire(s) du jour : ${busername}`})
 			interaction.followUp({embeds: [embed]})
 		}
 	}	
