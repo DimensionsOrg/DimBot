@@ -21,32 +21,28 @@ dayjs.tz.setDefault("Europe/Paris")
 @SlashGroup('birth')
 @Category('Admin')
 @injectable()
-export default class AddBirthCommand {
+export default class DelBirthCommand {
 	
-constructor(
-	private db : Database
-){}
-	
+	constructor(
+		private db : Database
+	){}
 
-	@Slash({ name: 'add' })
+	@Slash({name: 'del'})
 	@Guard()
-	async addBirth(
+	async delBirth(
 		@SlashOption({name : 'user'}) user: User,
-		@SlashOption({name : 'date'}) date: string,
 		interaction: CommandInteraction,
 		client: Client,
 		{ localize }: InteractionData
-		
 	) {
-
 		
 		const birthdayRepo = this.db.getRepo(Birthday)
-		const birthday = new Birthday()
-		birthday.birthday =  dayjs(date, 'DD/MM/YYYY').toDate()
-		birthday.id = user.id
-
-		await birthdayRepo.persistAndFlush(birthday)
-
-		interaction.followUp(`<@${birthday.id}> - ${dayjs(birthday.birthday).format('DD/MM/YYYY')} added`)
-	}	
+		const birthday = await birthdayRepo.findOne({id : user.id})
+		if(birthday){
+			await birthdayRepo.removeAndFlush(birthday)
+			interaction.followUp(`<@${user.id}> - ${dayjs(birthday.birthday).format('DD/MM/YYYY')} Supprimé!`)
+		}else{
+			interaction.followUp(`<@${user.id}> - Pas d'anniversaire trouvé..`)
+		}
+	}
 }
