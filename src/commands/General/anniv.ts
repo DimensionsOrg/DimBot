@@ -34,13 +34,12 @@ constructor(
 		
 		const birthdayRepo = this.db.getRepo(Birthday)
 		const birthdays = await birthdayRepo.findAll()
-		const bids = await birthdays.filter(b => dayjs(b.birthday).format('DD/MM') === dayjs().format('DD/MM')).map(b => b.id).join('')
+		const bids = await birthdays.filter(b => dayjs(b.birthday).format('DD/MM') === dayjs().format('DD/MM')).map(b => b.id!)
 		const busernames: string[] = []
 		for (const bid of bids) {
 			const user = await client.users.fetch(bid).catch(err => null)
 			if (user) busernames.push(user.tag)
-			console.debug(busernames)
-}
+		}
 		//const busername = await client.users.fetch(bid).then(u => u.tag).catch(err => console.log(err))
 		 
 		
@@ -54,7 +53,7 @@ constructor(
 				.setColor('#0099ff')
 				.setDescription(birthdays.map(b => `<@${b.id}> : ${dayjs(b.birthday).format('DD/MM/YYYY')}`).join('\n'))			
 				.setThumbnail('https://cdn.discordapp.com/avatars/617748486590300163/4d8b43300968e87f950bfc7161dab6b6.png')
-				.setFooter({text : `🎉 Anniversaire(s) du jour : ${busernames}`})
+				.setFooter({text : `🎉 Anniversaire(s) du jour : ${busernames.join(' | ')}`})
 			interaction.followUp({embeds: [embed]})
 		}
 	}	
