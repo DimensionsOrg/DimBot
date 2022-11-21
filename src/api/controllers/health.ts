@@ -1,20 +1,26 @@
+import { Controller, Get } from "@tsed/common"
+import { Client } from "discordx"
+
 import { Data } from "@entities"
 import { Database, Stats } from "@services"
 import { BaseController } from "@utils/classes"
-import { Client } from "discordx"
-import { Get, JsonController } from "routing-controllers"
-import { delay, inject, injectable } from "tsyringe"
+import { resolveDependencies } from "@utils/functions"
 
-@injectable()
-@JsonController('/health')
+@Controller('/health')
 export class HealthController extends BaseController {
 
-    constructor(
-        private readonly db: Database,
-        @inject(delay(() => Stats)) private readonly stats: Stats,
-        @inject(delay(() => Client)) private readonly client: Client,
-    ) {
+    private client: Client
+    private db: Database
+    private stats: Stats
+
+    constructor() {
         super()
+
+        resolveDependencies([Client, Database, Stats]).then(([client, db, stats]) => {
+            this.client = client
+            this.db = db
+            this.stats = stats
+        })
     }
 
     @Get('/check')
@@ -23,7 +29,7 @@ export class HealthController extends BaseController {
         return {
             online: this.client.user?.presence.status !== 'offline',
             uptime: this.client.uptime,
-            lastStartup: await this.db.getRepo(Data).get('lastStartup'),
+            lastStartup: await this.db.get(Data).get('lastStartup'),
         }
     }
 

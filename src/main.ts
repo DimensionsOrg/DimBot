@@ -1,28 +1,39 @@
-import 'reflect-metadata'
 import 'dotenv/config'
+import 'reflect-metadata'
 
-import { container } from 'tsyringe'
-import discordLogs from 'discord-logs'
-import { DIService, Client, tsyringeDependencyRegistryEngine } from 'discordx'
-import { importx } from '@discordx/importer'
+import { importx } from "@discordx/importer"
+import discordLogs from "discord-logs"
+import { Client, DIService, tsyringeDependencyRegistryEngine } from "discordx"
+import { container } from "tsyringe"
 
-import { Database, ImagesUpload, ErrorHandler, Logger, WebSocket } from '@services'
-import { initDataTable, waitForDependency } from '@utils/functions'
-import { Server } from '@api/server'
-
-import { clientConfig } from './client'
-import { apiConfig, generalConfig, websocketConfig } from '@config'
-import { NoBotTokenError } from '@errors'
+import { Server } from "@api/server"
+import { apiConfig, generalConfig, websocketConfig } from "@config"
+import { NoBotTokenError } from "@errors"
+import { Database, ErrorHandler, ImagesUpload, Logger, PluginsManager, WebSocket } from "@services"
+import { initDataTable, resolveDependency } from "@utils/functions"
+import { clientConfig } from "./client"
 
 async function run() {
 
-    // start loading
-    const logger = await waitForDependency(Logger)
+    // init logger, pluginsmanager and error handler
+    const logger = await resolveDependency(Logger)
+
+    // init error handler
+    await resolveDependency(ErrorHandler)
+    
+    // init plugins 
+    const pluginManager = await resolveDependency(PluginsManager)
+
+    // load plugins and import translations
+    await pluginManager.loadPlugins()
+    await pluginManager.syncTranslations()
+
+    // strart spinner
     console.log('\n')
     logger.startSpinner('Starting...')
 
     // init the sqlite database
-    const db = await waitForDependency(Database)
+    const db = await resolveDependency(Database)
     await db.initialize()
 
     // init the client
@@ -32,36 +43,47 @@ async function run() {
     discordLogs(client, { debug: false })
     container.registerInstance(Client, client)
 
-    // init the error handler
-    await waitForDependency(ErrorHandler)
-
     // import all the commands and events
-    await importx(__dirname + "/{events,commands,api}/**/*.{ts,js}")
+    await importx(__dirname + "/{events,commands}/**/*.{ts,js}")
+    await pluginManager.importCommands()
+    await pluginManager.importEvents()
         
     // init the data table if it doesn't exist
     await initDataTable()
 
+    // init plugins services
+    await pluginManager.initServices()
+
+    // init the plugin main file
+    await pluginManager.execMains()
+
     // log in with the bot token
     if (!process.env.BOT_TOKEN) throw new NoBotTokenError()
-    await client.login(process.env.BOT_TOKEN)
+    client.login(process.env.BOT_TOKEN)
+    .then(async () => {
 
-    // start the api server
-    if (apiConfig.enabled) {
-        const server = await waitForDependency(Server)
-        await server.start()
-    }
+        // start the api server
+        if (apiConfig.enabled) {
+            const server = await resolveDependency(Server)
+            await server.start()
+        }
 
-    // connect to the dashboard websocket
-    if (websocketConfig.enabled) {
-        const webSocket = await waitForDependency(WebSocket)
-        await webSocket.init(client.user?.id || null)
-    }
+        // connect to the dashboard websocket
+        if (websocketConfig.enabled) {
+            const webSocket = await resolveDependency(WebSocket)
+            await webSocket.init(client.user?.id || null)
+        }
 
-    // upload images to imgur if configured
-    if (process.env.IMGUR_CLIENT_ID && generalConfig.automaticUploadImagesToImgur) {
-        const imagesUpload = await waitForDependency(ImagesUpload)
-        await imagesUpload.syncWithDatabase()
-    }
+        // upload images to imgur if configured
+        if (process.env.IMGUR_CLIENT_ID && generalConfig.automaticUploadImagesToImgur) {
+            const imagesUpload = await resolveDependency(ImagesUpload)
+            await imagesUpload.syncWithDatabase()
+        }
+    })
+    .catch((err) => {
+        console.error(err)
+        process.exit(1)
+    })
 }
 
 run()

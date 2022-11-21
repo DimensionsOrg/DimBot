@@ -1,11 +1,14 @@
-import { databaseConfig, mikroORMConfig } from '@config'
-import { Schedule } from '@decorators'
-import { EntityName, MikroORM, Options } from '@mikro-orm/core'
-import { Logger } from '@services'
-import fastFolderSizeSync from 'fast-folder-size/sync'
-import fs from 'fs'
-import { backup, restore } from 'saveqlite'
-import { delay, inject, singleton } from 'tsyringe'
+import { databaseConfig, mikroORMConfig } from "@config"
+import { EntityName, MikroORM, Options } from "@mikro-orm/core"
+import fastFolderSizeSync from "fast-folder-size/sync"
+import fs from "fs"
+import { delay, inject, singleton } from "tsyringe"
+
+import { Schedule } from "@decorators"
+import * as entities from "@entities"
+import { Logger, PluginsManager } from "@services"
+import { resolveDependency } from "@utils/functions"
+import { backup, restore } from "saveqlite"
 
 @singleton()
 export class Database {
@@ -17,9 +20,16 @@ export class Database {
     ) { }
 
     async initialize() {
+        const pluginsManager = await resolveDependency(PluginsManager)
+
+        // get config
+        let config = mikroORMConfig[process.env.NODE_ENV || 'development'] as Options<DatabaseDriver>
+
+        // defines entities into the config
+        config.entities = [...Object.values(entities), ...pluginsManager.getEntities()]
 
         // initialize the ORM using the configuration exported in `mikro-orm.config.ts`
-        this._orm = await MikroORM.init(mikroORMConfig[process.env.NODE_ENV || 'development'] as Options<DatabaseDriver>)
+        this._orm = await MikroORM.init(config)
 
         const migrator = this._orm.getMigrator()
 
@@ -51,27 +61,27 @@ export class Database {
      * Shorthand to get custom and natives repositories
      * @param entity Entity of the custom repository to get
      */
-    getRepo<T>(entity: EntityName<T>) {
+    get<T extends object>(entity: EntityName<T>) {
         return this._orm.em.getRepository(entity)
     }
     
     /**
-     * Create a snapshot of the database each day at 23:59:59
+     * Create a snapshot of the database each day at 00:00
      */
-    @Schedule('59 59 23 * * *')
+    @Schedule('0 0 * * *')
     async backup(snapshotName?: string): Promise<boolean> { 
 
         const { formatDate } = await import('@utils/functions') 
         
         if (!databaseConfig.backup.enabled && !snapshotName) return false
         if (!this.isSQLiteDatabase()) {
-            this.logger.log('error', 'Database is not SQLite, couldn\'t backup')
+            this.logger.log('Database is not SQLite, couldn\'t backup')
             return false
         }
 
         const backupPath = databaseConfig.backup.path
         if (!backupPath) {
-            this.logger.log('error', 'Backup path not set, couldn\'t backup', true)
+            this.logger.log('Backup path not set, couldn\'t backup', 'error', true)
             return false
         }
 
@@ -92,7 +102,7 @@ export class Database {
 
             const errorMessage = typeof e === 'string' ? e : e instanceof Error ? e.message : 'Unknown error'
 
-            this.logger.log('error', 'Couldn\'t backup : ' + errorMessage, true)
+            this.logger.log('Couldn\'t backup : ' + errorMessage, 'error', true)
             return false
         }
 
@@ -106,13 +116,13 @@ export class Database {
     async restore(snapshotName: string): Promise<boolean> {
 
         if (!this.isSQLiteDatabase()) {
-            this.logger.log('error', 'Database is not SQLite, couldn\'t restore')
+            this.logger.log('Database is not SQLite, couldn\'t restore', 'error')
             return false
         }
 
         const backupPath = databaseConfig.backup.path
         if (!backupPath) {
-            this.logger.log('error', 'Backup path not set, couldn\'t restore', true)
+            this.logger.log('Backup path not set, couldn\'t restore', 'error', true)
         }
         
         try {
@@ -131,7 +141,7 @@ export class Database {
         } catch (error) {
             
             console.debug(error)
-            this.logger.log('error', 'Snapshot file not found, couldn\'t restore', true)
+            this.logger.log('Snapshot file not found, couldn\'t restore', 'error', true)
             return false
         }
     }
@@ -140,7 +150,7 @@ export class Database {
 
         const backupPath = databaseConfig.backup.path
         if (!backupPath) {
-            this.logger.log('error', 'Backup path not set, couldn\'t get list of backups')
+            this.logger.log('Backup path not set, couldn\'t get list of backups', 'error')
             return null
         }
 

@@ -1,6 +1,6 @@
 import { Client } from "discordx"
 import { Category } from "@discordx/utilities"
-import { CommandInteraction, User } from "discord.js"
+import { ApplicationCommandOptionType, CommandInteraction, User } from "discord.js"
 import { Birthday } from "@entities"
 import  dayjs from "dayjs"
 import customParseFormat from "dayjs/plugin/customParseFormat"
@@ -31,8 +31,8 @@ constructor(
 	@Slash({ name: 'add' })
 	@Guard()
 	async addBirth(
-		@SlashOption({name : 'user'}) user: User,
-		@SlashOption({name : 'date'}) date: string,
+		@SlashOption({name : 'user', type : ApplicationCommandOptionType.User}) user: User,
+		@SlashOption({name : 'date', type : ApplicationCommandOptionType.String}) date: string,
 		interaction: CommandInteraction,
 		client: Client,
 		{ localize }: InteractionData
@@ -40,7 +40,7 @@ constructor(
 	) {
 
 		
-		const birthdayRepo = this.db.getRepo(Birthday)
+		const birthdayRepo = this.db.get(Birthday)
 		const birthday = new Birthday()
 		birthday.birthday =  dayjs(date, 'DD/MM/YYYY').toDate()
 		birthday.id = user.id

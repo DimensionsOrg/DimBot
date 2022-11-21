@@ -1,5 +1,6 @@
-import { BaseError } from "@utils/classes"
 import { snake } from "case"
+
+import { BaseError } from "@utils/classes"
 
 export class InvalidOptionName extends BaseError {
 
@@ -9,7 +10,7 @@ export class InvalidOptionName extends BaseError {
 
     handle() {
 
-        this.logger.console('error', this.message)
-        process.exit(1)
+        this.logger.console(this.message, 'error')
+        this.kill()
     }
 }

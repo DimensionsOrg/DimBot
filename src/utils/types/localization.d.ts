@@ -1,10 +1,10 @@
-declare enum AdditionnalLocaleString {
+declare enum AdditionalLocaleString {
     English = 'en'
 }
 
 type TranslationsNestedPaths = NestedPaths<import('@i18n').Translation>
 
-type LocalizationMap = Partial<Record<`${import('discord-api-types/v9').Locale | AdditionnalLocaleString}`, string>>
+type LocalizationMap = Partial<Record<`${import('discord-api-types/v9').Locale | AdditionalLocaleString}`, string>>
 
 type SanitizedOptions = {
     descriptionLocalizations?: LocalizationMap
@@ -12,12 +12,24 @@ type SanitizedOptions = {
     localizationSource?: TranslationsNestedPaths
 }
 
-type ApplicationCommandOptions = Modify<import('discordx').ApplicationCommandOptions, SanitizedOptions>
-type SlashChoiceOption = Modify<import('discordx').SlashChoiceType<string, string | number>, SanitizedOptions>
-type SlashOptionOptions = Modify<import('discordx').SlashOptionOptions, SanitizedOptions>
-type SlashGroupOptions = Modify<import('discordx').SlashGroupOptions, SanitizedOptions>
+type Sanitization<K> = Modify<K, SanitizedOptions>
 
-type ContextMenuOptionsX = Omit<import('discordx').ApplicationCommandOptions<import('discordx').NotEmpty<string>> & {
+type ApplicationCommandOptions = Sanitization<
+    WithOptional<import('discordx').ApplicationCommandOptions<string, string>, 'description'>
+>
+
+
+type SlashGroupOptions = Sanitization<
+    WithOptional<import('discordx').SlashGroupOptions<string, string, string>, 'description'>
+>
+
+type SlashOptionOptions = Sanitization<
+    WithOptional<import('discordx').SlashOptionOptions<string, string>, 'description'>
+>
+
+type SlashChoiceOption = Modify<import('discordx').SlashChoiceType<string, string | number>, SanitizedOptions>
+
+type ContextMenuOptionsX = Omit<import('discordx').ApplicationCommandOptions<import('discordx').NotEmpty<string>, string> & {
     type: Exclude<import('discord.js').ApplicationCommandType, import('discord.js').ApplicationCommandType.ChatInput>
 }, "description" | "descriptionLocalizations">
 

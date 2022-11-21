@@ -1,9 +1,9 @@
+import { User as DUser } from "discord.js"
 import { Client } from "discordx"
-import { User as DUser} from "discord.js"
 
-import { User, Guild } from "@entities"
+import { Guild, User } from "@entities"
 import { Database, Logger, Stats } from "@services"
-import { waitForDependencies, waitForDependency } from "@utils/functions"
+import { resolveDependencies, resolveDependency } from "@utils/functions"
 
 /**
  * Add a active user to the database if doesn't exist.
@@ -11,9 +11,9 @@ import { waitForDependencies, waitForDependency } from "@utils/functions"
  */
 export const syncUser = async (user: DUser) => {
     
-    const  [ db, stats, logger ] = await waitForDependencies([Database, Stats, Logger])
+    const  [ db, stats, logger ] = await resolveDependencies([Database, Stats, Logger])
 
-    const userRepo = db.getRepo(User)
+    const userRepo = db.get(User)
 
     const userData = await userRepo.findOne({
         id: user.id
@@ -38,12 +38,13 @@ export const syncUser = async (user: DUser) => {
  * @param client 
  */
 export const syncGuild = async (guildId: string, client: Client) => {
-    const  [ db, stats, logger ] = await waitForDependencies([Database, Stats, Logger])
 
-    const guildRepo = db.getRepo(Guild),
+    const  [ db, stats, logger ] = await resolveDependencies([Database, Stats, Logger])
+
+    const guildRepo = db.get(Guild),
           guildData = await guildRepo.findOne({ id: guildId, deleted: false })
 
-    const fetchedGuild = await client.guilds.fetch(guildId)
+    const fetchedGuild = await client.guilds.fetch(guildId).catch(() => null)
 
     //check if this guild exists in the database, if not it creates it (or recovers it from the deleted ones)
     if (!guildData) {
@@ -87,7 +88,7 @@ export const syncGuild = async (guildId: string, client: Client) => {
  * @param client 
  */
 export const syncAllGuilds = async (client: Client)  => {
-    const db = await waitForDependency(Database)
+    const db = await resolveDependency(Database)
 
     // add missing guilds
     const guilds = client.guilds.cache
@@ -96,7 +97,7 @@ export const syncAllGuilds = async (client: Client)  => {
     }
 
     // remove deleted guilds
-    const guildRepo = db.getRepo(Guild)
+    const guildRepo = db.get(Guild)
     const guildsData = await guildRepo.getActiveGuilds()
     for (const guildData of guildsData) {
         await syncGuild(guildData.id, client)

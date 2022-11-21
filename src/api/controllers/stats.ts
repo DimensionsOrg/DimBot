@@ -1,21 +1,24 @@
-import { authenticated } from "@api/middlewares"
+import { Controller, Get, QueryParams, UseBefore } from "@tsed/common"
+
+import { Authenticated } from "@api/middlewares"
 import { Stats } from "@services"
 import { BaseController } from "@utils/classes"
-import { Get, JsonController, QueryParam, UseBefore } from "routing-controllers"
-import { injectable } from "tsyringe"
+import { resolveDependencies } from "@utils/functions"
 
-
-@JsonController('/stats')
+@Controller('/stats')
 @UseBefore(
-    authenticated
+    Authenticated
 )
-@injectable()
 export class StatsController extends BaseController {
 
-    constructor(
-        private readonly stats: Stats,
-    ) {
+    private stats: Stats
+
+    constructor() {
         super()
+
+        resolveDependencies([Stats]).then(([stats]) => {
+            this.stats = stats
+        })
     }
 
     @Get('/totals')
@@ -33,15 +36,22 @@ export class StatsController extends BaseController {
         }
     }
 
-    @Get('/lastInteraction')
+    @Get('/interaction/last')
     async lastInteraction() {
 
         const lastInteraction = await this.stats.getLastInteraction()
         return lastInteraction
     }
 
-    @Get('/commandsUsage')
-    async commandsUsage(@QueryParam('numberOfDays', { type: Number }) numberOfDays: number = 7) {
+    @Get('/guilds/last')
+    async lastGuildAdded() {
+
+        const lastGuild = await this.stats.getLastGuildAdded()
+        return lastGuild
+    }
+
+    @Get('/commands/usage')
+    async commandsUsage(@QueryParams('numberOfDays') numberOfDays: number = 7) {
         
         const commandsUsage = {
             slashCommands: await this.stats.countStatsPerDays('CHAT_INPUT_COMMAND_INTERACTION', numberOfDays),
@@ -63,7 +73,7 @@ export class StatsController extends BaseController {
         return body
     }
 
-    @Get('/topCommands')
+    @Get('/commands/top')
     async topCommands() {
 
         const topCommands = await this.stats.getTopCommands()
@@ -71,7 +81,7 @@ export class StatsController extends BaseController {
         return topCommands
     }
 
-    @Get('/usersActivity')
+    @Get('/users/activity')
     async usersActivity() {
 
         const usersActivity = await this.stats.getUsersActivity()
@@ -79,7 +89,7 @@ export class StatsController extends BaseController {
         return usersActivity
     }
 
-    @Get('/topGuilds')
+    @Get('/guilds/top')
     async topGuilds() {
 
         const topGuilds = await this.stats.getTopGuilds()
@@ -88,7 +98,7 @@ export class StatsController extends BaseController {
     }
 
     @Get('/usersAndGuilds')
-    async usersAndGuilds(@QueryParam('numberOfDays', { type: Number }) numberOfDays: number = 7) {
+    async usersAndGuilds(@QueryParams('numberOfDays') numberOfDays: number = 7) {
 
         return {
             activeUsers: await this.stats.countStatsPerDays('TOTAL_ACTIVE_USERS', numberOfDays),

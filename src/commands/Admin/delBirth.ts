@@ -1,6 +1,6 @@
 import { Client } from "discordx"
 import { Category } from "@discordx/utilities"
-import { CommandInteraction, User } from "discord.js"
+import { ApplicationCommandOptionType, CommandInteraction, User } from "discord.js"
 import { Birthday } from "@entities"
 import  dayjs from "dayjs"
 import customParseFormat from "dayjs/plugin/customParseFormat"
@@ -30,13 +30,13 @@ export default class DelBirthCommand {
 	@Slash({name: 'del'})
 	@Guard()
 	async delBirth(
-		@SlashOption({name : 'user'}) user: User,
+		@SlashOption({name : 'user', type : ApplicationCommandOptionType.User}) user: User,
 		interaction: CommandInteraction,
 		client: Client,
 		{ localize }: InteractionData
 	) {
 		
-		const birthdayRepo = this.db.getRepo(Birthday)
+		const birthdayRepo = this.db.get(Birthday)
 		const birthday = await birthdayRepo.findOne({id : user.id})
 		if(birthday){
 			await birthdayRepo.removeAndFlush(birthday)

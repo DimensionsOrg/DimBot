@@ -1,6 +1,5 @@
 import { Logger } from "@services"
-import { waitForDependency } from "@utils/functions"
-
+import { resolveDependency } from "@utils/functions"
 
 export abstract class BaseError extends Error {
 
@@ -8,10 +7,14 @@ export abstract class BaseError extends Error {
 
     constructor(message?: string) {
         super(message)
-        waitForDependency(Logger).then(logger => {
+        resolveDependency(Logger).then(logger => {
             this.logger = logger
         })
     }
 
     handle() {}
+
+    kill() {
+        process.exit(1)
+    }
 }

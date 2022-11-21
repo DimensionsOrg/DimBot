@@ -32,7 +32,7 @@ constructor(
 		
 	) {
 		
-		const birthdayRepo = this.db.getRepo(Birthday)
+		const birthdayRepo = this.db.get(Birthday)
 		const birthdays = await birthdayRepo.findAll()
 		const bids = await birthdays.filter(b => dayjs(b.birthday).format('DD/MM') === dayjs().format('DD/MM')).map(b => b.id!)
 		const busernames: string[] = []

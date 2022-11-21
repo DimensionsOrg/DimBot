@@ -1,8 +1,8 @@
-import { Client } from "discordx"
 import { Category } from "@discordx/utilities"
 import type { CommandInteraction, Message } from "discord.js"
+import { Client } from "discordx"
 
-import { Slash, Discord } from "@decorators"
+import { Discord, Slash } from "@decorators"
 
 @Discord()
 @Category('General')
@@ -22,8 +22,8 @@ export default class PingCommand {
 		const content = localize["COMMANDS"]["PING"]["MESSAGE"]({
 			member: msg.inGuild() ? `${interaction.member},` : "",
 			time: msg.createdTimestamp - interaction.createdTimestamp,
-			heartbeat: client.ws.ping ? `The heartbeat ping is ${Math.round(client.ws.ping)}ms.` : ""
-		});
+			heartbeat: client.ws.ping ? ` The heartbeat ping is ${Math.round(client.ws.ping)}ms.` : ""
+		})
 
         await msg.edit(content)
 	}

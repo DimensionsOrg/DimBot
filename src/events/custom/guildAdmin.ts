@@ -1,10 +1,10 @@
-import { Collection, GuildMember, PermissionFlagsBits, Role } from 'discord.js'
-import { Client, ArgsOf } from 'discordx'
-import { injectable } from 'tsyringe'
+import { Collection, GuildMember, PermissionFlagsBits, Role } from "discord.js"
+import { ArgsOf, Client } from "discordx"
+import { injectable } from "tsyringe"
 
-import { Logger } from '@services'
-import { Maintenance } from '@guards'
-import { On, Discord, Guard } from '@decorators'
+import { Discord, Guard, On } from "@decorators"
+import { Maintenance } from "@guards"
+import { Logger } from "@services"
 
 @Discord()
 @injectable()
@@ -28,7 +28,7 @@ export default class GuildAdminAddEvent {
         client: Client
     ) {
         
-        this.logger.log('info', `${member.nickname} has been added as an admin`)
+        this.logger.log(`${member.nickname} has been added as an admin`)
     }
 
     @On('guildAdminDelete')
@@ -41,7 +41,7 @@ export default class GuildAdminAddEvent {
         client: Client
     ) {
         
-        this.logger.log('info', `${member.nickname} has been removed from admins`)
+        this.logger.log(`${member.nickname} has been removed from admins`)
     }
 
     // =============================
